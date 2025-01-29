@@ -1,0 +1,25 @@
+.small-text {
+    font-size: 0.8em;
+    opacity: 0.8;
+}
+
+.glucose-text {
+    font-weight: bold;
+}
+.nightscout-vertical-box {
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+}
+
+.nightscout-superscript-box {
+    gap: 2px;
+    margin-bottom: -8px;
+}
+
+/* Adjust the y-offset of the superscript text */
+.nightscout-superscript-box StLabel {
+    font-size: 0.65em;
+    margin-bottom: -6px;
+    opacity: 0.9;
+}

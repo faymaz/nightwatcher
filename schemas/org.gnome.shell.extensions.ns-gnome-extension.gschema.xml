@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.nightwatcher" path="/org/gnome/shell/extensions/nightwatcher/">
+    <!-- URL and Token -->
+    <key name="nightscout-url" type="s">
+      <default>""</default>
+      <summary>Nightscout URL</summary>
+      <description>Your Nightscout site URL</description>
+    </key>
+    <key name="nightscout-token" type="s">
+      <default>""</default>
+      <summary>Nightscout API Token</summary>
+      <description>Your Nightscout API token</description>
+    </key>
+
+    <!-- Display Settings -->
+    <key name="show-delta" type="b">
+      <default>true</default>
+      <summary>Show Delta</summary>
+      <description>Show glucose value change in the panel</description>
+    </key>
+    <key name="show-trend" type="b">
+      <default>true</default>
+      <summary>Show Trend Arrow</summary>
+      <description>Show trend arrow in the panel</description>
+    </key>
+    <key name="show-time" type="b">
+      <default>true</default>
+      <summary>Show Elapsed Time</summary>
+      <description>Show elapsed time since last reading</description>
+    </key>
+    <key name="show-icon" type="b">
+      <default>true</default>
+      <summary>Show Icon</summary>
+      <description>Show icon in the panel</description>
+    </key>
+    <key name="icon-position" type="s">
+      <default>"right"</default>
+      <summary>Icon Position</summary>
+      <description>Position of the icon in panel (left/right)</description>
+    </key>
+
+    <!-- Thresholds -->
+    <key name="urgent-high-threshold" type="i">
+      <default>240</default>
+      <summary>Urgent High Threshold</summary>
+      <description>Blood glucose urgent high threshold (mg/dL)</description>
+    </key>
+    <key name="high-threshold" type="i">
+      <default>180</default>
+      <summary>High Threshold</summary>
+      <description>Blood glucose high threshold (mg/dL)</description>
+    </key>
+    <key name="low-threshold" type="i">
+      <default>95</default>
+      <summary>Low Threshold</summary>
+      <description>Blood glucose low threshold (mg/dL)</description>
+    </key>
+    <key name="urgent-low-threshold" type="i">
+      <default>80</default>
+      <summary>Urgent Low Threshold</summary>
+      <description>Blood glucose urgent low threshold (mg/dL)</description>
+    </key>
+
+    <!-- Alert Settings -->
+    <key name="enable-alerts" type="b">
+      <default>true</default>
+      <summary>Enable Alerts</summary>
+      <description>Enable sound alerts for urgent glucose levels</description>
+    </key>
+    
+    <key name="alert-urgent-high" type="b">
+      <default>true</default>
+      <summary>Alert on Urgent High</summary>
+      <description>Play alert sound when glucose is urgent high</description>
+    </key>
+    
+    <key name="alert-urgent-low" type="b">
+      <default>true</default>
+      <summary>Alert on Urgent Low</summary>
+      <description>Play alert sound when glucose is urgent low</description>
+    </key>
+    
+    <key name="alert-interval" type="i">
+      <default>300</default>
+      <summary>Alert Interval</summary>
+      <description>Minimum time between alerts in seconds</description>
+    </key>
+    <!-- Colors -->
+    <key name="urgent-high-color" type="s">
+      <default>"rgb(255,69,0)"</default>
+      <summary>Urgent High Color</summary>
+      <description>Color for urgent high glucose values</description>
+    </key>
+    <key name="high-color" type="s">
+      <default>"rgb(255,165,0)"</default>
+      <summary>High Color</summary>
+      <description>Color for high glucose values</description>
+    </key>
+    <key name="normal-color" type="s">
+      <default>"rgb(50,205,50)"</default>
+      <summary>Normal Color</summary>
+      <description>Color for normal glucose values</description>
+    </key>
+    <key name="low-color" type="s">
+      <default>"rgb(255,140,0)"</default>
+      <summary>Low Color</summary>
+      <description>Color for low glucose values</description>
+    </key>
+    <key name="urgent-low-color" type="s">
+      <default>"rgb(255,0,0)"</default>
+      <summary>Urgent Low Color</summary>
+      <description>Color for urgent low glucose values</description>
+    </key>
+  </schema>
+</schemalist>
