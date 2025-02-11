@@ -95,15 +95,15 @@ const NightWatcherIndicator = GObject.registerClass(
     
         _updateDisplay() {
             if (this._isDestroyed) return;
-    
+        
             const showIcon = this._settings.get_boolean('show-icon');
             const icon = this._elements.get('icon');
             if (icon) {
                 icon.visible = showIcon;
             }
-    
+        
             if (this._lastReading) {
-                this._updatePanelText(this._lastReading);
+                this._updateMainDisplay(this._lastReading);
             }
         }
 
@@ -318,6 +318,31 @@ const NightWatcherIndicator = GObject.registerClass(
                 }
             }
         }
+
+        _playAlert() {
+            if (this._isDestroyed) return;
+            
+            console.log('Starting alert playback...');
+            try {
+                const soundPath = GLib.build_filenamev([this._extension.path, 'sounds', 'alert.mp3']);
+                if (!GLib.file_test(soundPath, GLib.FileTest.EXISTS)) {
+                    console.log('Alert sound file not found:', soundPath);
+                    return;
+                }
+    
+                // Simple paplay approach
+                try {
+                    GLib.spawn_command_line_async(`paplay "${soundPath}"`);
+                    console.log('Started paplay playback');
+                    this._lastAlertTime = Date.now();
+                } catch (error) {
+                    console.log('Error playing alert:', error);
+                }
+            } catch (error) {
+                console.log('Alert playback failed:', error);
+            }
+        }
+        
         _updateErrorState(message) {
             if (this._isDestroyed) return;
         
@@ -399,25 +424,7 @@ const NightWatcherIndicator = GObject.registerClass(
             }
         }
     
-        _playAlert() {
-            if (this._isDestroyed) return;
-    
-            try {
-                const soundPath = GLib.build_filenamev([this._extension.path, 'sounds', 'alert.mp3']);
-                if (!GLib.file_test(soundPath, GLib.FileTest.EXISTS)) {
-                    console.log('Alert sound file not found:', soundPath);
-                    return;
-                }
-    
-                let player = global.display.get_sound_player();
-                let file = Gio.File.new_for_path(soundPath);
-                player.play_from_file(file, 'NightWatcher Alert', null);
-                this._lastAlertTime = Date.now();
-            } catch (error) {
-                console.log('Error playing alert:', error);
-            }
-        }
-    
+   
         _getColorForGlucose(sgv) {
             const urgentHighThreshold = this._settings.get_int('urgent-high-threshold');
             const highThreshold = this._settings.get_int('high-threshold');
