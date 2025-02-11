@@ -1,41 +1,54 @@
+// prefs.js
 import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
 import Gdk from 'gi://Gdk';
-import Gio from 'gi://Gio';
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-export default class NightscoutPreferences extends ExtensionPreferences {
+export default class NightWatcherPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
-    
+
         // Create pages with icons
-        const accountPage = this._createAccountPage(settings);
-        accountPage.set_icon_name('user-info-symbolic');
-        window.add(accountPage);
-    
-        const thresholdsPage = this._createThresholdsPage(settings);
-        thresholdsPage.set_icon_name('preferences-system-symbolic');
-        window.add(thresholdsPage);
-    
-        const alertsPage = this._createAlertsPage(settings);
-        alertsPage.set_icon_name('preferences-system-notifications-symbolic');
-        window.add(alertsPage);
-    
-        const displayPage = this._createDisplayPage(settings);
-        displayPage.set_icon_name('preferences-desktop-display-symbolic');
-        window.add(displayPage);
-    
-        // Set titles for pages
-        accountPage.set_title('Account');
-        thresholdsPage.set_title('Thresholds');
-        alertsPage.set_title('Alerts');
-        displayPage.set_title('Display');
+        const pages = [
+            {
+                id: 'account',
+                title: 'Account',
+                iconName: 'user-info-symbolic',
+                creator: this._createAccountPage.bind(this)
+            },
+            {
+                id: 'thresholds',
+                title: 'Thresholds',
+                iconName: 'preferences-system-symbolic',
+                creator: this._createThresholdsPage.bind(this)
+            },
+            {
+                id: 'alerts',
+                title: 'Alerts',
+                iconName: 'preferences-system-notifications-symbolic',
+                creator: this._createAlertsPage.bind(this)
+            },
+            {
+                id: 'display',
+                title: 'Display',
+                iconName: 'preferences-desktop-display-symbolic',
+                creator: this._createDisplayPage.bind(this)
+            }
+        ];
+
+        // Create and add pages
+        pages.forEach(({ id, title, iconName, creator }) => {
+            const page = creator(settings);
+            page.set_title(title);
+            page.set_icon_name(iconName);
+            window.add(page);
+        });
     }
 
     _createAccountPage(settings) {
         const page = new Adw.PreferencesPage();
         const group = new Adw.PreferencesGroup({
-            title: 'Nightscout Settings',
+            title: 'NightWatcher Settings',
             description: 'Configure your Nightscout connection'
         });
 
@@ -84,56 +97,111 @@ export default class NightscoutPreferences extends ExtensionPreferences {
             title: 'Glucose Thresholds',
             description: 'Set glucose threshold values (mg/dL)'
         });
+        
+        // Create threshold rows
+        const thresholds = [
+            ['urgent-high-threshold', 'Urgent High Threshold', 'Value for urgent high alerts'],
+            ['high-threshold', 'High Threshold', 'Value for high alerts'],
+            ['low-threshold', 'Low Threshold', 'Value for low alerts'],
+            ['urgent-low-threshold', 'Urgent Low Threshold', 'Value for urgent low alerts']
+        ];
+
+        thresholds.forEach(([key, title, subtitle]) => {
+            const row = this._createSpinRow(settings, key, title, subtitle, 40, 400);
+            thresholdsGroup.add(row);
+        });
+
         page.add(thresholdsGroup);
-
-        // Urgent High Threshold
-        const urgentHighRow = this._createSpinRow(settings, 'urgent-high-threshold',
-            'Urgent High Threshold', 'Value for urgent high alerts', 40, 400);
-        thresholdsGroup.add(urgentHighRow);
-
-        // High Threshold
-        const highRow = this._createSpinRow(settings, 'high-threshold',
-            'High Threshold', 'Value for high alerts', 40, 400);
-        thresholdsGroup.add(highRow);
-
-        // Low Threshold
-        const lowRow = this._createSpinRow(settings, 'low-threshold',
-            'Low Threshold', 'Value for low alerts', 40, 400);
-        thresholdsGroup.add(lowRow);
-
-        // Urgent Low Threshold
-        const urgentLowRow = this._createSpinRow(settings, 'urgent-low-threshold',
-            'Urgent Low Threshold', 'Value for urgent low alerts', 40, 400);
-        thresholdsGroup.add(urgentLowRow);
 
         // Colors Group
         const colorsGroup = new Adw.PreferencesGroup({
             title: 'Threshold Colors',
             description: 'Customize colors for different glucose ranges'
         });
+
+        // Create color rows
+        const colors = [
+            ['urgent-high-color', 'Urgent High Color'],
+            ['high-color', 'High Color'],
+            ['normal-color', 'Normal Color'],
+            ['low-color', 'Low Color'],
+            ['urgent-low-color', 'Urgent Low Color']
+        ];
+
+        colors.forEach(([key, title]) => {
+            const row = this._createColorRow(settings, key, title);
+            colorsGroup.add(row);
+        });
+
         page.add(colorsGroup);
+        return page;
+    }
 
-        // Color settings
-        const urgentHighColorRow = this._createColorRow(settings, 'urgent-high-color',
-            'Urgent High Color');
-        colorsGroup.add(urgentHighColorRow);
+    _createAlertsPage(settings) {
+        const page = new Adw.PreferencesPage();
+        const group = new Adw.PreferencesGroup({
+            title: 'Alert Settings',
+            description: 'Configure sound alerts for glucose levels'
+        });
 
-        const highColorRow = this._createColorRow(settings, 'high-color',
-            'High Color');
-        colorsGroup.add(highColorRow);
+        // Enable Alerts
+        const enableRow = new Adw.ActionRow({
+            title: 'Enable Alerts',
+            subtitle: 'Enable sound alerts for urgent glucose levels'
+        });
+        const enableSwitch = new Gtk.Switch({
+            active: settings.get_boolean('enable-alerts'),
+            valign: Gtk.Align.CENTER
+        });
+        enableSwitch.connect('notify::active', (widget) => {
+            settings.set_boolean('enable-alerts', widget.get_active());
+        });
+        enableRow.add_suffix(enableSwitch);
+        group.add(enableRow);
 
-        const normalColorRow = this._createColorRow(settings, 'normal-color',
-            'Normal Color');
-        colorsGroup.add(normalColorRow);
+        // Create alert switches
+        const alerts = [
+            ['alert-urgent-high', 'Alert on Urgent High', 'Play alert sound when glucose is urgent high'],
+            ['alert-urgent-low', 'Alert on Urgent Low', 'Play alert sound when glucose is urgent low']
+        ];
 
-        const lowColorRow = this._createColorRow(settings, 'low-color',
-            'Low Color');
-        colorsGroup.add(lowColorRow);
+        alerts.forEach(([key, title, subtitle]) => {
+            const row = new Adw.ActionRow({
+                title: title,
+                subtitle: subtitle
+            });
+            const switchWidget = new Gtk.Switch({
+                active: settings.get_boolean(key),
+                valign: Gtk.Align.CENTER
+            });
+            switchWidget.connect('notify::active', (widget) => {
+                settings.set_boolean(key, widget.get_active());
+            });
+            row.add_suffix(switchWidget);
+            group.add(row);
+        });
 
-        const urgentLowColorRow = this._createColorRow(settings, 'urgent-low-color',
-            'Urgent Low Color');
-        colorsGroup.add(urgentLowColorRow);
+        // Alert Interval
+        const intervalRow = new Adw.ActionRow({
+            title: 'Alert Interval',
+            subtitle: 'Minimum time between alerts (in minutes)'
+        });
+        const intervalSpin = new Gtk.SpinButton({
+            adjustment: new Gtk.Adjustment({
+                lower: 1,
+                upper: 60,
+                step_increment: 1
+            }),
+            value: settings.get_int('alert-interval') / 60,
+            valign: Gtk.Align.CENTER
+        });
+        intervalSpin.connect('value-changed', (widget) => {
+            settings.set_int('alert-interval', widget.get_value() * 60);
+        });
+        intervalRow.add_suffix(intervalSpin);
+        group.add(intervalRow);
 
+        page.add(group);
         return page;
     }
 
@@ -144,65 +212,29 @@ export default class NightscoutPreferences extends ExtensionPreferences {
             description: 'Configure what information to show in the panel'
         });
 
-        // Show Delta switch
-        const deltaRow = new Adw.ActionRow({
-            title: 'Show Delta',
-            subtitle: 'Show glucose value change in the panel'
-        });
-        const deltaSwitch = new Gtk.Switch({
-            active: settings.get_boolean('show-delta'),
-            valign: Gtk.Align.CENTER
-        });
-        deltaSwitch.connect('notify::active', (widget) => {
-            settings.set_boolean('show-delta', widget.get_active());
-        });
-        deltaRow.add_suffix(deltaSwitch);
-        group.add(deltaRow);
+        // Create display switches
+        const displays = [
+            ['show-delta', 'Show Delta', 'Show glucose value change in the panel'],
+            ['show-trend', 'Show Trend Arrow', 'Show trend arrow in the panel'],
+            ['show-time', 'Show Elapsed Time', 'Show elapsed time since last reading in the panel'],
+            ['show-icon', 'Show Icon', 'Show NightWatcher icon in the panel']
+        ];
 
-        // Show Trend Arrow switch
-        const trendRow = new Adw.ActionRow({
-            title: 'Show Trend Arrow',
-            subtitle: 'Show trend arrow in the panel'
+        displays.forEach(([key, title, subtitle]) => {
+            const row = new Adw.ActionRow({
+                title: title,
+                subtitle: subtitle
+            });
+            const switchWidget = new Gtk.Switch({
+                active: settings.get_boolean(key),
+                valign: Gtk.Align.CENTER
+            });
+            switchWidget.connect('notify::active', (widget) => {
+                settings.set_boolean(key, widget.get_active());
+            });
+            row.add_suffix(switchWidget);
+            group.add(row);
         });
-        const trendSwitch = new Gtk.Switch({
-            active: settings.get_boolean('show-trend'),
-            valign: Gtk.Align.CENTER
-        });
-        trendSwitch.connect('notify::active', (widget) => {
-            settings.set_boolean('show-trend', widget.get_active());
-        });
-        trendRow.add_suffix(trendSwitch);
-        group.add(trendRow);
-
-        // Show Elapsed Time switch
-        const timeRow = new Adw.ActionRow({
-            title: 'Show Elapsed Time',
-            subtitle: 'Show elapsed time since last reading in the panel'
-        });
-        const timeSwitch = new Gtk.Switch({
-            active: settings.get_boolean('show-time'),
-            valign: Gtk.Align.CENTER
-        });
-        timeSwitch.connect('notify::active', (widget) => {
-            settings.set_boolean('show-time', widget.get_active());
-        });
-        timeRow.add_suffix(timeSwitch);
-        group.add(timeRow);
-
-        // Show Icon switch
-        const iconRow = new Adw.ActionRow({
-            title: 'Show Icon',
-            subtitle: 'Show Nightscout icon in the panel'
-        });
-        const iconSwitch = new Gtk.Switch({
-            active: settings.get_boolean('show-icon'),
-            valign: Gtk.Align.CENTER
-        });
-        iconSwitch.connect('notify::active', (widget) => {
-            settings.set_boolean('show-icon', widget.get_active());
-        });
-        iconRow.add_suffix(iconSwitch);
-        group.add(iconRow);
 
         // Icon Position dropdown
         const positionRow = new Adw.ActionRow({
@@ -248,82 +280,6 @@ export default class NightscoutPreferences extends ExtensionPreferences {
 
         row.add_suffix(spinButton);
         return row;
-    }
-
-    _createAlertsPage(settings) {
-        const page = new Adw.PreferencesPage();
-        const group = new Adw.PreferencesGroup({
-            title: 'Alert Settings',
-            description: 'Configure sound alerts for glucose levels'
-        });
-    
-        // Enable Alerts switch
-        const enableRow = new Adw.ActionRow({
-            title: 'Enable Alerts',
-            subtitle: 'Enable sound alerts for urgent glucose levels'
-        });
-        const enableSwitch = new Gtk.Switch({
-            active: settings.get_boolean('enable-alerts'),
-            valign: Gtk.Align.CENTER
-        });
-        enableSwitch.connect('notify::active', (widget) => {
-            settings.set_boolean('enable-alerts', widget.get_active());
-        });
-        enableRow.add_suffix(enableSwitch);
-        group.add(enableRow);
-    
-        // Alert on Urgent High
-        const urgentHighRow = new Adw.ActionRow({
-            title: 'Alert on Urgent High',
-            subtitle: 'Play alert sound when glucose is urgent high'
-        });
-        const urgentHighSwitch = new Gtk.Switch({
-            active: settings.get_boolean('alert-urgent-high'),
-            valign: Gtk.Align.CENTER
-        });
-        urgentHighSwitch.connect('notify::active', (widget) => {
-            settings.set_boolean('alert-urgent-high', widget.get_active());
-        });
-        urgentHighRow.add_suffix(urgentHighSwitch);
-        group.add(urgentHighRow);
-    
-        // Alert on Urgent Low
-        const urgentLowRow = new Adw.ActionRow({
-            title: 'Alert on Urgent Low',
-            subtitle: 'Play alert sound when glucose is urgent low'
-        });
-        const urgentLowSwitch = new Gtk.Switch({
-            active: settings.get_boolean('alert-urgent-low'),
-            valign: Gtk.Align.CENTER
-        });
-        urgentLowSwitch.connect('notify::active', (widget) => {
-            settings.set_boolean('alert-urgent-low', widget.get_active());
-        });
-        urgentLowRow.add_suffix(urgentLowSwitch);
-        group.add(urgentLowRow);
-    
-        // Alert Interval
-        const intervalRow = new Adw.ActionRow({
-            title: 'Alert Interval',
-            subtitle: 'Minimum time between alerts (in minutes)'
-        });
-        const intervalSpin = new Gtk.SpinButton({
-            adjustment: new Gtk.Adjustment({
-                lower: 1,
-                upper: 60,
-                step_increment: 1
-            }),
-            value: settings.get_int('alert-interval') / 60,
-            valign: Gtk.Align.CENTER
-        });
-        intervalSpin.connect('value-changed', (widget) => {
-            settings.set_int('alert-interval', widget.get_value() * 60);
-        });
-        intervalRow.add_suffix(intervalSpin);
-        group.add(intervalRow);
-    
-        page.add(group);
-        return page;
     }
 
     _createColorRow(settings, key, title) {

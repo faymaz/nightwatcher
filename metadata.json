@@ -2,7 +2,7 @@
     "uuid": "nightwatcher@faymaz.github.com",
     "name": "NightWatcher – Nightscout CGM Monitor",
     "description": "A GNOME Shell extension for real-time Nightscout glucose monitoring, featuring customizable high/low thresholds, color-coded alerts, real-time notifications, and audible alarms for critical levels.",
-    "version": 2,
+    "version": 1,
     "shell-version": [
         "45",
         "46",
