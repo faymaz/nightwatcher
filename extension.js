@@ -59,12 +59,7 @@ const NightWatcherIndicator = GObject.registerClass(
                 this._updateDisplay();
             });
     
-            GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
-                if (!this._isDestroyed) {
-                    this._startMonitoring();
-                }
-                return GLib.SOURCE_REMOVE;
-            });
+            this._startMonitoring();
         }
 
         _startMonitoring() {
@@ -509,35 +504,11 @@ const NightWatcherIndicator = GObject.registerClass(
             super(metadata);
             this._indicator = null;
             this._settings = null;
-            this._recoveryTimeout = null;
         }
     
         enable() {
             this._settings = this.getSettings();
-    
-            GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
-                this._initializeExtension();
-                return GLib.SOURCE_REMOVE;
-            });
-    
-            this._recoveryTimeout = GLib.timeout_add_seconds(
-                GLib.PRIORITY_DEFAULT,
-                30,
-                () => {
-                    this._checkAndRecover();
-                    return GLib.SOURCE_CONTINUE;
-                }
-            );
-        }
-    
-        _checkAndRecover() {
-            if (!this._indicator || this._indicator._isDestroyed) {
-                if (this._indicator) {
-                    this._indicator.destroy();
-                }
-                this._indicator = null;
-                this._initializeExtension();
-            }
+            this._initializeExtension();
         }
     
         _initializeExtension() {
@@ -554,16 +525,10 @@ const NightWatcherIndicator = GObject.registerClass(
         }
     
         disable() {
-            if (this._recoveryTimeout) {
-                GLib.source_remove(this._recoveryTimeout);
-                this._recoveryTimeout = null;
-            }
-    
             if (this._indicator) {
                 this._indicator.destroy();
                 this._indicator = null;
             }
-    
             this._settings = null;
         }
     }
