@@ -26,7 +26,7 @@ A GNOME Shell extension that seamlessly integrates with Nightscout to display re
 ## 🚀 Installation
 
 ### From GNOME Extensions Website
-1. Visit [GNOME Extensions](https://extensions.gnome.org) and search for "Nightscout Indicator"
+1. Visit [GNOME Extensions](https://extensions.gnome.org) and search for "NightWatcher" [NightWatcher](https://extensions.gnome.org/extension/7830/nightwatcher-nightscout-cgm-monitor/)
 2. Click "Install" to add the extension
 3. Enable the extension using the toggle switch
 
