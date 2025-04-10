@@ -36,7 +36,7 @@ const DELTA_THRESHOLDS = {
     VERY_FAST_FALL: -3
 };
 
-const UPDATE_INTERVAL = 60; // 60 seconds
+const UPDATE_INTERVAL = 60;
 const ERROR_TEXT = '⚠️ Error';
 const LOADING_TEXT = '---';
 
@@ -64,12 +64,12 @@ const NightWatcherIndicator = GObject.registerClass(
 
         _startMonitoring() {
             try {
-                // Initial update
+               
                 this._updateGlucose().catch(error => {
                     console.log('Error in initial update:', error);
                 });
         
-                // Update periodically
+               
                 this._timeout = GLib.timeout_add_seconds(
                     GLib.PRIORITY_DEFAULT,
                     UPDATE_INTERVAL,
@@ -111,25 +111,25 @@ const NightWatcherIndicator = GObject.registerClass(
         
                 if (!glucoseLabel || !secondaryInfo) return;
         
-                // Update glucose value
+               
                 glucoseLabel.set_text(`${reading.sgv}`);
                 glucoseLabel.set_style(`color: ${this._getColorForGlucose(reading.sgv)};`);
         
-                // Build secondary info string
+               
                 let secondaryText = '';
         
-                // Add trend arrow
+               
                 if (reading.direction || reading.calculatedTrend) {
                     secondaryText += reading.direction || reading.calculatedTrend;
                 }
         
-                // Add delta
+               
                 if (typeof reading.delta === 'number' || typeof reading.calculatedDelta === 'number') {
                     const deltaValue = reading.delta || reading.calculatedDelta;
                     secondaryText += ` ${deltaValue > 0 ? '+' : ''}${deltaValue}`;
                 }
         
-                // Add time
+               
                 if (reading.dateString) {
                     const now = new Date();
                     const readingTime = new Date(reading.dateString);
@@ -149,14 +149,14 @@ const NightWatcherIndicator = GObject.registerClass(
         }
     
         _createUI() {
-            // Main container
+           
             this.boxLayout = new St.BoxLayout({
                 style_class: 'panel-status-menu-box',
                 y_align: Clutter.ActorAlign.CENTER
             });
             this._elements.set('boxLayout', this.boxLayout);
         
-            // Icon
+           
             this.icon = new St.Icon({
                 gicon: Gio.Icon.new_for_string(`${this._extension.path}/icons/icon.svg`),
                 style_class: 'system-status-icon'
@@ -164,12 +164,12 @@ const NightWatcherIndicator = GObject.registerClass(
             this._elements.set('icon', this.icon);
             this.boxLayout.add_child(this.icon);
                 
-            // Value wrapper
+           
             this.valueWrapper = new St.BoxLayout({
                 style: 'spacing: 0px;'
             });
     
-            // Glucose label
+           
             this.glucoseLabel = new St.Label({
                 text: LOADING_TEXT,
                 y_align: Clutter.ActorAlign.CENTER,
@@ -177,7 +177,7 @@ const NightWatcherIndicator = GObject.registerClass(
             });
             this._elements.set('glucoseLabel', this.glucoseLabel);
     
-            // Secondary info
+           
             this.secondaryInfo = new St.Label({
                 text: '',
                 y_align: Clutter.ActorAlign.START,
@@ -185,17 +185,17 @@ const NightWatcherIndicator = GObject.registerClass(
             });
             this._elements.set('secondaryInfo', this.secondaryInfo);
     
-            // Add to layout
+           
             this.valueWrapper.add_child(this.glucoseLabel);
             this.valueWrapper.add_child(this.secondaryInfo);
             this.boxLayout.add_child(this.valueWrapper);
             this.add_child(this.boxLayout);
     
-            // Create menu items
+           
             this._createMenuSection();
         }
         _createMenuSection() {
-            // Menu items
+           
             const menuItems = [
                 ['menuItem', 'Last reading: '],
                 ['deltaItem', 'Delta: '],
@@ -214,13 +214,13 @@ const NightWatcherIndicator = GObject.registerClass(
     
             this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
     
-            // Refresh button
+           
             const refreshButton = this._createMenuItem('refreshButton', 'Refresh Now', () => {
                 this._updateGlucose().catch(error => console.log('Refresh error:', error));
                 this.menu.close();
             });
     
-            // Settings button
+           
             const settingsButton = this._createMenuItem('settingsButton', 'Open Settings', () => {
                 this._extension.openPreferences();
                 this.menu.close();
@@ -325,7 +325,7 @@ const NightWatcherIndicator = GObject.registerClass(
                     return;
                 }
     
-                // Simple paplay approach
+               
                 try {
                     GLib.spawn_command_line_async(`paplay "${soundPath}"`);
                     console.log('Started paplay playback');

@@ -8,7 +8,7 @@ export default class NightWatcherPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
 
-        // Create pages with icons
+       
         const pages = [
             {
                 id: 'account',
@@ -36,7 +36,7 @@ export default class NightWatcherPreferences extends ExtensionPreferences {
             }
         ];
 
-        // Create and add pages
+       
         pages.forEach(({ id, title, iconName, creator }) => {
             const page = creator(settings);
             page.set_title(title);
@@ -52,7 +52,7 @@ export default class NightWatcherPreferences extends ExtensionPreferences {
             description: 'Configure your Nightscout connection'
         });
 
-        // URL
+       
         const urlRow = new Adw.ActionRow({
             title: 'Nightscout URL',
             subtitle: 'Your Nightscout site URL (without trailing slash)'
@@ -68,7 +68,7 @@ export default class NightWatcherPreferences extends ExtensionPreferences {
         urlRow.add_suffix(urlEntry);
         group.add(urlRow);
 
-        // Token
+       
         const tokenRow = new Adw.ActionRow({
             title: 'API Token',
             subtitle: 'Your Nightscout API token'
@@ -92,13 +92,13 @@ export default class NightWatcherPreferences extends ExtensionPreferences {
     _createThresholdsPage(settings) {
         const page = new Adw.PreferencesPage();
         
-        // Thresholds Group
+       
         const thresholdsGroup = new Adw.PreferencesGroup({
             title: 'Glucose Thresholds',
             description: 'Set glucose threshold values (mg/dL)'
         });
         
-        // Create threshold rows
+       
         const thresholds = [
             ['urgent-high-threshold', 'Urgent High Threshold', 'Value for urgent high alerts'],
             ['high-threshold', 'High Threshold', 'Value for high alerts'],
@@ -113,13 +113,13 @@ export default class NightWatcherPreferences extends ExtensionPreferences {
 
         page.add(thresholdsGroup);
 
-        // Colors Group
+       
         const colorsGroup = new Adw.PreferencesGroup({
             title: 'Threshold Colors',
             description: 'Customize colors for different glucose ranges'
         });
 
-        // Create color rows
+       
         const colors = [
             ['urgent-high-color', 'Urgent High Color'],
             ['high-color', 'High Color'],
@@ -144,7 +144,7 @@ export default class NightWatcherPreferences extends ExtensionPreferences {
             description: 'Configure sound alerts for glucose levels'
         });
 
-        // Enable Alerts
+       
         const enableRow = new Adw.ActionRow({
             title: 'Enable Alerts',
             subtitle: 'Enable sound alerts for urgent glucose levels'
@@ -159,7 +159,7 @@ export default class NightWatcherPreferences extends ExtensionPreferences {
         enableRow.add_suffix(enableSwitch);
         group.add(enableRow);
 
-        // Create alert switches
+       
         const alerts = [
             ['alert-urgent-high', 'Alert on Urgent High', 'Play alert sound when glucose is urgent high'],
             ['alert-urgent-low', 'Alert on Urgent Low', 'Play alert sound when glucose is urgent low']
@@ -181,7 +181,7 @@ export default class NightWatcherPreferences extends ExtensionPreferences {
             group.add(row);
         });
 
-        // Alert Interval
+       
         const intervalRow = new Adw.ActionRow({
             title: 'Alert Interval',
             subtitle: 'Minimum time between alerts (in minutes)'
@@ -212,7 +212,7 @@ export default class NightWatcherPreferences extends ExtensionPreferences {
             description: 'Configure what information to show in the panel'
         });
 
-        // Create display switches
+       
         const displays = [
             ['show-delta', 'Show Delta', 'Show glucose value change in the panel'],
             ['show-trend', 'Show Trend Arrow', 'Show trend arrow in the panel'],
@@ -236,7 +236,7 @@ export default class NightWatcherPreferences extends ExtensionPreferences {
             group.add(row);
         });
 
-        // Icon Position dropdown
+       
         const positionRow = new Adw.ActionRow({
             title: 'Icon Position',
             subtitle: 'Position of the icon in panel'
