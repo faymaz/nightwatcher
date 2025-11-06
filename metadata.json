@@ -7,7 +7,8 @@
         "45",
         "46",
         "47",
-        "48"
+        "48",
+        "49"
       ],
     "url": "https://github.com/faymaz/nightwatcher",
     "settings-schema": "org.gnome.shell.extensions.nightwatcher",
@@ -15,8 +16,6 @@
     "icon": "icons/icon.svg",
     "contributors": [
         "faymaz"],
-    "donations": {
-        "github": "https://github.com/faymaz"
-    },
+    "donation-url": "https://buymeacoffee.com/faymaz",
     "application-id": "org.gnome.shell.extensions.nightwatcher"
 }
