@@ -7,8 +7,9 @@
         "45",
         "46",
         "47",
-        "48"
-      ],
+        "48",
+        "49"
+        ],
     "url": "https://github.com/faymaz/nightwatcher",
     "settings-schema": "org.gnome.shell.extensions.nightwatcher",
     "gettext-domain": "nightwatcher-monitor",
@@ -16,7 +17,9 @@
     "contributors": [
         "faymaz"],
     "donations": {
-        "github": "https://github.com/faymaz"
+    "buymeacoffee": "fethiaymazb",
+    "github": "faymaz"
     },
+    "license": "MIT",    
     "application-id": "org.gnome.shell.extensions.nightwatcher"
 }

@@ -112,5 +112,46 @@
       <summary>Urgent Low Color</summary>
       <description>Color for urgent low glucose values</description>
     </key>
+
+    <!-- Update Interval -->
+    <key name="update-interval" type="i">
+      <default>60</default>
+      <summary>Update Interval</summary>
+      <description>Seconds between glucose data updates</description>
+    </key>
+
+    <!-- Debug Settings -->
+    <key name="enable-debug-logs" type="b">
+      <default>false</default>
+      <summary>Enable Debug Logs</summary>
+      <description>Enable debug logging for troubleshooting</description>
+    </key>
+
+    <!-- Notification Settings -->
+    <key name="enable-notifications" type="b">
+      <default>true</default>
+      <summary>Enable Notifications</summary>
+      <description>Show desktop notifications for connection errors</description>
+    </key>
+
+    <!-- Network Settings -->
+    <key name="max-retries" type="i">
+      <default>3</default>
+      <summary>Maximum Retries</summary>
+      <description>Maximum number of retry attempts on network error</description>
+    </key>
+
+    <key name="retry-delay" type="i">
+      <default>30</default>
+      <summary>Retry Delay</summary>
+      <description>Initial retry delay in seconds (doubles with each retry)</description>
+    </key>
+
+    <!-- TLS/SSL Settings -->
+    <key name="skip-tls-verification" type="b">
+      <default>false</default>
+      <summary>Skip TLS Certificate Verification</summary>
+      <description>Disable SSL/TLS certificate validation for self-signed certificates (WARNING: Less secure)</description>
+    </key>
   </schema>
 </schemalist>

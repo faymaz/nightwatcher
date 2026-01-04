@@ -33,6 +33,12 @@ export default class NightWatcherPreferences extends ExtensionPreferences {
                 title: 'Display',
                 iconName: 'preferences-desktop-display-symbolic',
                 creator: this._createDisplayPage.bind(this)
+            },
+            {
+                id: 'advanced',
+                title: 'Advanced',
+                iconName: 'preferences-other-symbolic',
+                creator: this._createAdvancedPage.bind(this)
             }
         ];
 
@@ -280,6 +286,130 @@ export default class NightWatcherPreferences extends ExtensionPreferences {
 
         row.add_suffix(spinButton);
         return row;
+    }
+
+    _createAdvancedPage(settings) {
+        const page = new Adw.PreferencesPage();
+        const group = new Adw.PreferencesGroup({
+            title: 'Advanced Settings',
+            description: 'Configure advanced options and debugging'
+        });
+
+        // Update Interval
+        const intervalRow = new Adw.ActionRow({
+            title: 'Update Interval',
+            subtitle: 'Seconds between glucose data updates'
+        });
+        const intervalSpin = new Gtk.SpinButton({
+            adjustment: new Gtk.Adjustment({
+                lower: 30,
+                upper: 300,
+                step_increment: 10
+            }),
+            value: settings.get_int('update-interval'),
+            valign: Gtk.Align.CENTER
+        });
+        intervalSpin.connect('value-changed', (widget) => {
+            settings.set_int('update-interval', widget.get_value());
+        });
+        intervalRow.add_suffix(intervalSpin);
+        group.add(intervalRow);
+
+        // Debug Logs
+        const debugRow = new Adw.ActionRow({
+            title: 'Enable Debug Logs',
+            subtitle: 'Enable detailed logging for troubleshooting (check journalctl)'
+        });
+        const debugSwitch = new Gtk.Switch({
+            active: settings.get_boolean('enable-debug-logs'),
+            valign: Gtk.Align.CENTER
+        });
+        debugSwitch.connect('notify::active', (widget) => {
+            settings.set_boolean('enable-debug-logs', widget.get_active());
+        });
+        debugRow.add_suffix(debugSwitch);
+        group.add(debugRow);
+
+        page.add(group);
+
+        // Network Settings Group
+        const networkGroup = new Adw.PreferencesGroup({
+            title: 'Network Settings',
+            description: 'Configure connection retry behavior'
+        });
+
+        // Enable Notifications
+        const notificationRow = new Adw.ActionRow({
+            title: 'Enable Notifications',
+            subtitle: 'Show desktop notifications for connection errors'
+        });
+        const notificationSwitch = new Gtk.Switch({
+            active: settings.get_boolean('enable-notifications'),
+            valign: Gtk.Align.CENTER
+        });
+        notificationSwitch.connect('notify::active', (widget) => {
+            settings.set_boolean('enable-notifications', widget.get_active());
+        });
+        notificationRow.add_suffix(notificationSwitch);
+        networkGroup.add(notificationRow);
+
+        // Max Retries
+        const maxRetriesRow = new Adw.ActionRow({
+            title: 'Maximum Retries',
+            subtitle: 'Number of retry attempts on network error'
+        });
+        const maxRetriesSpin = new Gtk.SpinButton({
+            adjustment: new Gtk.Adjustment({
+                lower: 1,
+                upper: 10,
+                step_increment: 1
+            }),
+            value: settings.get_int('max-retries'),
+            valign: Gtk.Align.CENTER
+        });
+        maxRetriesSpin.connect('value-changed', (widget) => {
+            settings.set_int('max-retries', widget.get_value());
+        });
+        maxRetriesRow.add_suffix(maxRetriesSpin);
+        networkGroup.add(maxRetriesRow);
+
+        // Retry Delay
+        const retryDelayRow = new Adw.ActionRow({
+            title: 'Retry Delay',
+            subtitle: 'Initial retry delay in seconds (doubles with each retry)'
+        });
+        const retryDelaySpin = new Gtk.SpinButton({
+            adjustment: new Gtk.Adjustment({
+                lower: 10,
+                upper: 120,
+                step_increment: 10
+            }),
+            value: settings.get_int('retry-delay'),
+            valign: Gtk.Align.CENTER
+        });
+        retryDelaySpin.connect('value-changed', (widget) => {
+            settings.set_int('retry-delay', widget.get_value());
+        });
+        retryDelayRow.add_suffix(retryDelaySpin);
+        networkGroup.add(retryDelayRow);
+
+        // Skip TLS Verification
+        const tlsRow = new Adw.ActionRow({
+            title: 'Skip TLS Certificate Verification',
+            subtitle: '⚠️ Disable SSL/TLS validation for self-signed certificates (Less secure)'
+        });
+        const tlsSwitch = new Gtk.Switch({
+            active: settings.get_boolean('skip-tls-verification'),
+            valign: Gtk.Align.CENTER
+        });
+        tlsSwitch.connect('notify::active', (widget) => {
+            settings.set_boolean('skip-tls-verification', widget.get_active());
+        });
+        tlsRow.add_suffix(tlsSwitch);
+        networkGroup.add(tlsRow);
+
+        page.add(networkGroup);
+        return page;
     }
 
     _createColorRow(settings, key, title) {
