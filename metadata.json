@@ -9,13 +9,17 @@
         "47",
         "48",
         "49"
-      ],
+        ],
     "url": "https://github.com/faymaz/nightwatcher",
     "settings-schema": "org.gnome.shell.extensions.nightwatcher",
     "gettext-domain": "nightwatcher-monitor",
     "icon": "icons/icon.svg",
     "contributors": [
         "faymaz"],
-    "donation-url": "https://buymeacoffee.com/faymaz",
+    "donations": {
+    "buymeacoffee": "fethiaymazb",
+    "github": "faymaz"
+    },
+    "license": "MIT",    
     "application-id": "org.gnome.shell.extensions.nightwatcher"
 }

@@ -257,59 +257,268 @@ const NightWatcherIndicator = GObject.registerClass(
     
                 if (!nsUrl || !nsToken) {
                     this._updateErrorState('⚠️ Settings');
+                    console.log('Nightwatcher: Missing URL or token in settings');
                     return;
                 }
     
                 const baseUrl = nsUrl.replace(/\/$/, '');
-                const token = nsToken.replace(/^\/?[?]token=/, '');
-                const url = `${baseUrl}/api/v1/entries.json?count=2`;
+                let cleanToken = nsToken.trim();
+                
+                // Token'daki fazlalık prefixleri temizle (MyFritz için özel)
+                cleanToken = cleanToken.replace(/^token=/, '');
+                cleanToken = cleanToken.replace(/^\?token=/, '');
+                cleanToken = cleanToken.replace(/^\/\?token=/, '');
+                
+                // MyFritz özel kontrolü
+                const isMyFritz = baseUrl.includes('myfritz.net');
+                if (isMyFritz) {
+                    console.log('Nightwatcher: Detected MyFritz Nightscout installation');
+                }
+                
+                // Debug bilgileri
+                console.log(`Nightwatcher Debug: Base URL: ${baseUrl}`);
+                console.log(`Nightwatcher Debug: Original token length: ${nsToken.length}`);
+                console.log(`Nightwatcher Debug: Clean token length: ${cleanToken.length}`);
+                console.log(`Nightwatcher Debug: Token preview: ${cleanToken.substring(0, 8)}...`);
+                console.log(`Nightwatcher Debug: Token has whitespace? ${nsToken !== nsToken.trim()}`);
+                console.log(`Nightwatcher Debug: Token starts with: ${nsToken.substring(0, 10)}`);
+                console.log(`Nightwatcher Debug: Token ends with: ${nsToken.substring(nsToken.length - 5)}`);
+                
+                // MyFritz için optimize edilmiş authentication yöntemleri
+                const authMethods = isMyFritz ? [
+                    // MyFritz Method 1: Token query parameter without count
+                    () => {
+                        const url = `${baseUrl}/api/v1/entries.json?token=${cleanToken}`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'MyFritz token query v1 no-count' };
+                    },
+                    // MyFritz Method 2: Simple entries.json
+                    () => {
+                        const url = `${baseUrl}/entries.json?token=${cleanToken}`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'MyFritz entries.json' };
+                    },
+                    // MyFritz Method 3: Token query parameter with count
+                    () => {
+                        const url = `${baseUrl}/api/v1/entries.json?count=2&token=${cleanToken}`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'MyFritz token query param v1' };
+                    },
+                    // MyFritz Method 4: Simple path with count
+                    () => {
+                        const url = `${baseUrl}/entries.json?count=2&token=${cleanToken}`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'MyFritz simple path with token' };
+                    },
+                    // MyFritz Method 5: API Secret header
+                    () => {
+                        const url = `${baseUrl}/api/v1/entries.json?count=2`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('api-secret', cleanToken);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'MyFritz api-secret header v1' };
+                    },
+                    // MyFritz Method 6: Alternative API paths
+                    () => {
+                        const url = `${baseUrl}/api/treatments.json?token=${cleanToken}`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'MyFritz treatments endpoint' };
+                    },
+                    // MyFritz Method 7: Direct data endpoint
+                    () => {
+                        const url = `${baseUrl}/data?token=${cleanToken}`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'MyFritz data endpoint' };
+                    },
+                    // MyFritz Method 8: CGM data endpoint
+                    () => {
+                        const url = `${baseUrl}/cgm?token=${cleanToken}`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'MyFritz cgm endpoint' };
+                    },
+                    // MyFritz Method 9: Latest reading
+                    () => {
+                        const url = `${baseUrl}/latest?token=${cleanToken}`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'MyFritz latest endpoint' };
+                    },
+                    // MyFritz Method 10: REST endpoint
+                    () => {
+                        const url = `${baseUrl}/rest/entries?token=${cleanToken}`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'MyFritz REST endpoint' };
+                    }
+                ] : [
+                    // Standard Nightscout Methods
+                    // Method 1: API Secret header with v1
+                    () => {
+                        const url = `${baseUrl}/api/v1/entries.json?count=2`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('api-secret', cleanToken);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'api-secret header v1' };
+                    },
+                    // Method 2: Token query parameter with v1
+                    () => {
+                        const url = `${baseUrl}/api/v1/entries.json?count=2&token=${cleanToken}`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'token query param v1' };
+                    },
+                    // Method 3: API Secret header with v3
+                    () => {
+                        const url = `${baseUrl}/api/v3/entries.json?count=2`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('api-secret', cleanToken);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'api-secret header v3' };
+                    },
+                    // Method 4: Token query parameter with v3
+                    () => {
+                        const url = `${baseUrl}/api/v3/entries.json?count=2&token=${cleanToken}`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'token query param v3' };
+                    },
+                    // Method 5: Authorization Bearer header with v1
+                    () => {
+                        const url = `${baseUrl}/api/v1/entries.json?count=2`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('Authorization', `Bearer ${cleanToken}`);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'Bearer token v1' };
+                    },
+                    // Method 6: Simple path without API versioning
+                    () => {
+                        const url = `${baseUrl}/entries.json?count=2&token=${cleanToken}`;
+                        const message = Soup.Message.new('GET', url);
+                        message.request_headers.append('Accept', 'application/json');
+                        message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
+                        return { message, url, method: 'simple path with token' };
+                    }
+                ];
     
                 const session = new Soup.Session();
-                const message = Soup.Message.new('GET', url);
+                let lastError = null;
+                
+                // Authentication yöntemlerini sırayla dene
+                for (let i = 0; i < authMethods.length; i++) {
+                    try {
+                        const { message, url, method } = authMethods[i]();
+                        console.log(`Nightwatcher: Trying method ${i + 1}: ${method}`);
+                        console.log(`Nightwatcher: URL: ${url}`);
+                        
+                        const bytes = await session.send_and_read_async(
+                            message,
+                            GLib.PRIORITY_DEFAULT,
+                            null
+                        );
     
-                message.request_headers.append('api-secret', token);
-                message.request_headers.append('Accept', 'application/json');
+                        console.log(`Nightwatcher: Method ${i + 1} returned status: ${message.status_code}`);
     
-                const bytes = await session.send_and_read_async(
-                    message,
-                    GLib.PRIORITY_DEFAULT,
-                    null
-                );
-    
-                if (message.status_code !== 200) {
-                    throw new Error(`HTTP error! status: ${message.status_code}`);
+                        if (message.status_code === 200) {
+                            // Başarılı! Veri işlemeye devam et
+                            console.log(`Nightwatcher: Successfully authenticated with method ${i + 1} (${method})`);
+                            const decoder = new TextDecoder('utf-8');
+                            const text = decoder.decode(bytes.get_data());
+                            const data = JSON.parse(text);
+            
+                            if (!Array.isArray(data) || data.length < 2) {
+                                throw new Error('Not enough glucose data available');
+                            }
+            
+                            const [current, previous] = data;
+                            const delta = current.sgv - previous.sgv;
+                            current.delta = delta;
+                            current.calculatedDelta = delta;
+            
+                            const trend = this._calculateTrendArrow([current, previous]);
+                            current.direction = trend;
+                            current.calculatedTrend = trend;
+            
+                            this._lastReading = current;
+                            this._updateMainDisplay(current);
+                            this._updateMenuDisplay(current);
+                            this._checkAndAlert(current.sgv);
+                            
+                            return; // Başarılı, fonksiyondan çık
+                        } else if (message.status_code === 401) {
+                            // 401 hatası, bir sonraki auth yöntemi denenecek
+                            lastError = new Error(`HTTP 401 Unauthorized with method ${i + 1} (${method})`);
+                            console.log(`Nightwatcher: Method ${i + 1} (${method}) failed with 401, trying next...`);
+                            continue;
+                        } else {
+                            console.log(`Nightwatcher: Method ${i + 1} failed with HTTP ${message.status_code}`);
+                            throw new Error(`HTTP error! status: ${message.status_code}`);
+                        }
+                    } catch (error) {
+                        lastError = error;
+                        if (i === authMethods.length - 1) {
+                            // Son yöntem de başarısız oldu
+                            throw error;
+                        }
+                        console.log(`Nightwatcher: Method ${i + 1} failed:`, error.message);
+                    }
                 }
     
-                const decoder = new TextDecoder('utf-8');
-                const text = decoder.decode(bytes.get_data());
-                const data = JSON.parse(text);
-    
-                if (!Array.isArray(data) || data.length < 2) {
-                    throw new Error('Not enough glucose data available');
+                // Tüm authentication yöntemleri başarısız oldu
+                console.log('Nightwatcher: All authentication methods failed');
+                
+                // MyFritz için özel mesaj
+                if (isMyFritz) {
+                    console.log('Nightwatcher: MyFritz installation detected but API endpoints not found');
+                    this._updateErrorState('🔍 API');
+                    return;
                 }
-    
-                const [current, previous] = data;
-                const delta = current.sgv - previous.sgv;
-                current.delta = delta;
-                current.calculatedDelta = delta;
-    
-                const trend = this._calculateTrendArrow([current, previous]);
-                current.direction = trend;
-                current.calculatedTrend = trend;
-    
-                this._lastReading = current;
-                this._updateMainDisplay(current);
-                this._updateMenuDisplay(current);
-                this._checkAndAlert(current.sgv);
+                
+                // Geçici çözüm: Son veri varsa onu göster
+                if (this._lastReading) {
+                    console.log('Nightwatcher: Showing cached data');
+                    this._updateMainDisplay(this._lastReading);
+                    this._updateMenuDisplay(this._lastReading);
+                    return;
+                }
+                
+                throw lastError || new Error('All authentication methods failed');
     
             } catch (error) {
                 console.log('Nightwatcher Error:', error);
                 if (!this._isDestroyed) {
-                    this._updateLabel('label', ERROR_TEXT);
-                    const mainLabel = this._elements.get('label');
-                    if (mainLabel) {
-                        mainLabel.set_style('color: red;');
+                    // Daha spesifik hata mesajları göster
+                    let errorMessage = ERROR_TEXT;
+                    if (error.message.includes('HTTP 401') || error.message.includes('Unauthorized')) {
+                        errorMessage = '🔐 Auth';
+                    } else if (error.message.includes('HTTP')) {
+                        errorMessage = '🌐 HTTP';
+                    } else if (error.message.includes('Not enough glucose data')) {
+                        errorMessage = '📊 Data';
                     }
+                    
+                    this._updateErrorState(errorMessage);
                 }
             }
         }
