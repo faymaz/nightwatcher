@@ -7,6 +7,7 @@ import GObject from 'gi://GObject';
 import Soup from 'gi://Soup';
 import St from 'gi://St';
 
+
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -62,14 +63,20 @@ const NightWatcherIndicator = GObject.registerClass(
             this._startMonitoring();
         }
 
+        _debugLog(...args) {
+            if (this._settings.get_boolean('enable-debug-log')) {
+                log('[NightWatcher]', ...args);
+            }
+        }
+
         _startMonitoring() {
             try {
                
                 this._updateGlucose().catch(error => {
-                    console.log('Error in initial update:', error);
+                    log('[NightWatcher] Error in initial update:', error);
                 });
-        
-               
+
+
                 this._timeout = GLib.timeout_add_seconds(
                     GLib.PRIORITY_DEFAULT,
                     UPDATE_INTERVAL,
@@ -78,13 +85,13 @@ const NightWatcherIndicator = GObject.registerClass(
                             return GLib.SOURCE_REMOVE;
                         }
                         this._updateGlucose().catch(error => {
-                            console.log('Error in periodic update:', error);
+                            log('[NightWatcher] Error in periodic update:', error);
                         });
                         return GLib.SOURCE_CONTINUE;
                     }
                 );
             } catch (error) {
-                console.log('Error starting monitoring:', error);
+                log('[NightWatcher] Error starting monitoring:', error);
             }
         }
     
@@ -140,7 +147,7 @@ const NightWatcherIndicator = GObject.registerClass(
                 secondaryInfo.set_text(secondaryText);
         
             } catch (error) {
-                console.log('Error updating main display:', error);
+                log('[NightWatcher] Error updating main display:', error);
                 if (glucoseLabel) {
                     glucoseLabel.set_text(ERROR_TEXT);
                     glucoseLabel.set_style('color: red;');
@@ -216,7 +223,7 @@ const NightWatcherIndicator = GObject.registerClass(
     
            
             const refreshButton = this._createMenuItem('refreshButton', 'Refresh Now', () => {
-                this._updateGlucose().catch(error => console.log('Refresh error:', error));
+                this._updateGlucose().catch(error => log('[NightWatcher] Refresh error:', error));
                 this.menu.close();
             });
     
@@ -257,36 +264,38 @@ const NightWatcherIndicator = GObject.registerClass(
     
                 if (!nsUrl || !nsToken) {
                     this._updateErrorState('⚠️ Settings');
-                    console.log('Nightwatcher: Missing URL or token in settings');
+                    this._debugLog('Missing URL or token in settings');
                     return;
                 }
     
-                const baseUrl = nsUrl.replace(/\/$/, '');
+                let baseUrl = nsUrl.replace(/\/$/, '');
+                baseUrl = baseUrl.replace(/:443$/, '');
                 let cleanToken = nsToken.trim();
                 
-                // Token'daki fazlalık prefixleri temizle (MyFritz için özel)
+               
                 cleanToken = cleanToken.replace(/^token=/, '');
                 cleanToken = cleanToken.replace(/^\?token=/, '');
                 cleanToken = cleanToken.replace(/^\/\?token=/, '');
                 
-                // MyFritz özel kontrolü
+
+
                 const isMyFritz = baseUrl.includes('myfritz.net');
                 if (isMyFritz) {
-                    console.log('Nightwatcher: Detected MyFritz Nightscout installation');
+                    this._debugLog('Detected MyFritz Nightscout installation');
                 }
+
+
+                this._debugLog(`Base URL: ${baseUrl}`);
+                this._debugLog(`Original token length: ${nsToken.length}`);
+                this._debugLog(`Clean token length: ${cleanToken.length}`);
+                this._debugLog(`Token preview: ${cleanToken.substring(0, 8)}...`);
+                this._debugLog(`Token has whitespace? ${nsToken !== nsToken.trim()}`);
+                this._debugLog(`Token starts with: ${nsToken.substring(0, 10)}`);
+                this._debugLog(`Token ends with: ${nsToken.substring(nsToken.length - 5)}`);
                 
-                // Debug bilgileri
-                console.log(`Nightwatcher Debug: Base URL: ${baseUrl}`);
-                console.log(`Nightwatcher Debug: Original token length: ${nsToken.length}`);
-                console.log(`Nightwatcher Debug: Clean token length: ${cleanToken.length}`);
-                console.log(`Nightwatcher Debug: Token preview: ${cleanToken.substring(0, 8)}...`);
-                console.log(`Nightwatcher Debug: Token has whitespace? ${nsToken !== nsToken.trim()}`);
-                console.log(`Nightwatcher Debug: Token starts with: ${nsToken.substring(0, 10)}`);
-                console.log(`Nightwatcher Debug: Token ends with: ${nsToken.substring(nsToken.length - 5)}`);
-                
-                // MyFritz için optimize edilmiş authentication yöntemleri
+               
                 const authMethods = isMyFritz ? [
-                    // MyFritz Method 1: Token query parameter without count
+                   
                     () => {
                         const url = `${baseUrl}/api/v1/entries.json?token=${cleanToken}`;
                         const message = Soup.Message.new('GET', url);
@@ -294,7 +303,7 @@ const NightWatcherIndicator = GObject.registerClass(
                         message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
                         return { message, url, method: 'MyFritz token query v1 no-count' };
                     },
-                    // MyFritz Method 2: Simple entries.json
+                   
                     () => {
                         const url = `${baseUrl}/entries.json?token=${cleanToken}`;
                         const message = Soup.Message.new('GET', url);
@@ -302,7 +311,7 @@ const NightWatcherIndicator = GObject.registerClass(
                         message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
                         return { message, url, method: 'MyFritz entries.json' };
                     },
-                    // MyFritz Method 3: Token query parameter with count
+                   
                     () => {
                         const url = `${baseUrl}/api/v1/entries.json?count=2&token=${cleanToken}`;
                         const message = Soup.Message.new('GET', url);
@@ -310,7 +319,7 @@ const NightWatcherIndicator = GObject.registerClass(
                         message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
                         return { message, url, method: 'MyFritz token query param v1' };
                     },
-                    // MyFritz Method 4: Simple path with count
+                   
                     () => {
                         const url = `${baseUrl}/entries.json?count=2&token=${cleanToken}`;
                         const message = Soup.Message.new('GET', url);
@@ -318,7 +327,7 @@ const NightWatcherIndicator = GObject.registerClass(
                         message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
                         return { message, url, method: 'MyFritz simple path with token' };
                     },
-                    // MyFritz Method 5: API Secret header
+                   
                     () => {
                         const url = `${baseUrl}/api/v1/entries.json?count=2`;
                         const message = Soup.Message.new('GET', url);
@@ -327,7 +336,7 @@ const NightWatcherIndicator = GObject.registerClass(
                         message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
                         return { message, url, method: 'MyFritz api-secret header v1' };
                     },
-                    // MyFritz Method 6: Alternative API paths
+                   
                     () => {
                         const url = `${baseUrl}/api/treatments.json?token=${cleanToken}`;
                         const message = Soup.Message.new('GET', url);
@@ -335,7 +344,7 @@ const NightWatcherIndicator = GObject.registerClass(
                         message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
                         return { message, url, method: 'MyFritz treatments endpoint' };
                     },
-                    // MyFritz Method 7: Direct data endpoint
+                   
                     () => {
                         const url = `${baseUrl}/data?token=${cleanToken}`;
                         const message = Soup.Message.new('GET', url);
@@ -343,7 +352,7 @@ const NightWatcherIndicator = GObject.registerClass(
                         message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
                         return { message, url, method: 'MyFritz data endpoint' };
                     },
-                    // MyFritz Method 8: CGM data endpoint
+                   
                     () => {
                         const url = `${baseUrl}/cgm?token=${cleanToken}`;
                         const message = Soup.Message.new('GET', url);
@@ -351,7 +360,7 @@ const NightWatcherIndicator = GObject.registerClass(
                         message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
                         return { message, url, method: 'MyFritz cgm endpoint' };
                     },
-                    // MyFritz Method 9: Latest reading
+                   
                     () => {
                         const url = `${baseUrl}/latest?token=${cleanToken}`;
                         const message = Soup.Message.new('GET', url);
@@ -359,7 +368,7 @@ const NightWatcherIndicator = GObject.registerClass(
                         message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
                         return { message, url, method: 'MyFritz latest endpoint' };
                     },
-                    // MyFritz Method 10: REST endpoint
+                   
                     () => {
                         const url = `${baseUrl}/rest/entries?token=${cleanToken}`;
                         const message = Soup.Message.new('GET', url);
@@ -368,8 +377,8 @@ const NightWatcherIndicator = GObject.registerClass(
                         return { message, url, method: 'MyFritz REST endpoint' };
                     }
                 ] : [
-                    // Standard Nightscout Methods
-                    // Method 1: API Secret header with v1
+                   
+                   
                     () => {
                         const url = `${baseUrl}/api/v1/entries.json?count=2`;
                         const message = Soup.Message.new('GET', url);
@@ -378,7 +387,7 @@ const NightWatcherIndicator = GObject.registerClass(
                         message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
                         return { message, url, method: 'api-secret header v1' };
                     },
-                    // Method 2: Token query parameter with v1
+                   
                     () => {
                         const url = `${baseUrl}/api/v1/entries.json?count=2&token=${cleanToken}`;
                         const message = Soup.Message.new('GET', url);
@@ -386,7 +395,7 @@ const NightWatcherIndicator = GObject.registerClass(
                         message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
                         return { message, url, method: 'token query param v1' };
                     },
-                    // Method 3: API Secret header with v3
+                   
                     () => {
                         const url = `${baseUrl}/api/v3/entries.json?count=2`;
                         const message = Soup.Message.new('GET', url);
@@ -395,7 +404,7 @@ const NightWatcherIndicator = GObject.registerClass(
                         message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
                         return { message, url, method: 'api-secret header v3' };
                     },
-                    // Method 4: Token query parameter with v3
+                   
                     () => {
                         const url = `${baseUrl}/api/v3/entries.json?count=2&token=${cleanToken}`;
                         const message = Soup.Message.new('GET', url);
@@ -403,7 +412,7 @@ const NightWatcherIndicator = GObject.registerClass(
                         message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
                         return { message, url, method: 'token query param v3' };
                     },
-                    // Method 5: Authorization Bearer header with v1
+                   
                     () => {
                         const url = `${baseUrl}/api/v1/entries.json?count=2`;
                         const message = Soup.Message.new('GET', url);
@@ -412,7 +421,7 @@ const NightWatcherIndicator = GObject.registerClass(
                         message.request_headers.append('User-Agent', 'NightWatcher-GNOME-Extension');
                         return { message, url, method: 'Bearer token v1' };
                     },
-                    // Method 6: Simple path without API versioning
+                   
                     () => {
                         const url = `${baseUrl}/entries.json?count=2&token=${cleanToken}`;
                         const message = Soup.Message.new('GET', url);
@@ -421,32 +430,48 @@ const NightWatcherIndicator = GObject.registerClass(
                         return { message, url, method: 'simple path with token' };
                     }
                 ];
-    
+
+                const ignoreTlsErrors = this._settings.get_boolean('ignore-tls-errors');
+                if (ignoreTlsErrors) {
+                    this._debugLog('TLS certificate validation will be bypassed');
+                }
+
                 const session = new Soup.Session();
                 let lastError = null;
                 
-                // Authentication yöntemlerini sırayla dene
+               
                 for (let i = 0; i < authMethods.length; i++) {
                     try {
                         const { message, url, method } = authMethods[i]();
-                        console.log(`Nightwatcher: Trying method ${i + 1}: ${method}`);
-                        console.log(`Nightwatcher: URL: ${url}`);
-                        
+                        this._debugLog(`Trying method ${i + 1}: ${method}`);
+                        const sanitizedUrl = url.replace(/token=([^&]+)/, 'token=***REDACTED***');
+                        this._debugLog(`URL: ${sanitizedUrl}`);
+
+                        if (ignoreTlsErrors) {
+                            message.connect('accept-certificate', () => true);
+                        }
+
                         const bytes = await session.send_and_read_async(
                             message,
                             GLib.PRIORITY_DEFAULT,
                             null
                         );
-    
-                        console.log(`Nightwatcher: Method ${i + 1} returned status: ${message.status_code}`);
-    
+
+                        this._debugLog(`Method ${i + 1} returned status: ${message.status_code}`);
+
                         if (message.status_code === 200) {
-                            // Başarılı! Veri işlemeye devam et
-                            console.log(`Nightwatcher: Successfully authenticated with method ${i + 1} (${method})`);
                             const decoder = new TextDecoder('utf-8');
                             const text = decoder.decode(bytes.get_data());
                             const data = JSON.parse(text);
-            
+
+                            if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+                                const errorMsg = data.errors[0].message || 'Unknown error';
+                                this._debugLog(`Method ${i + 1} returned error: ${errorMsg}`);
+                                throw new Error(`Nightscout error: ${errorMsg}`);
+                            }
+
+                            this._debugLog(`Successfully authenticated with method ${i + 1} (${method})`);
+
                             if (!Array.isArray(data) || data.length < 2) {
                                 throw new Error('Not enough glucose data available');
                             }
@@ -465,39 +490,40 @@ const NightWatcherIndicator = GObject.registerClass(
                             this._updateMenuDisplay(current);
                             this._checkAndAlert(current.sgv);
                             
-                            return; // Başarılı, fonksiyondan çık
+                            return;
                         } else if (message.status_code === 401) {
-                            // 401 hatası, bir sonraki auth yöntemi denenecek
+
                             lastError = new Error(`HTTP 401 Unauthorized with method ${i + 1} (${method})`);
-                            console.log(`Nightwatcher: Method ${i + 1} (${method}) failed with 401, trying next...`);
+                            this._debugLog(`Method ${i + 1} (${method}) failed with 401, trying next...`);
                             continue;
                         } else {
-                            console.log(`Nightwatcher: Method ${i + 1} failed with HTTP ${message.status_code}`);
+                            this._debugLog(`Method ${i + 1} failed with HTTP ${message.status_code}`);
                             throw new Error(`HTTP error! status: ${message.status_code}`);
                         }
                     } catch (error) {
                         lastError = error;
                         if (i === authMethods.length - 1) {
-                            // Son yöntem de başarısız oldu
+
                             throw error;
                         }
-                        console.log(`Nightwatcher: Method ${i + 1} failed:`, error.message);
+                        this._debugLog(`Method ${i + 1} failed:`, error.message);
                     }
                 }
     
-                // Tüm authentication yöntemleri başarısız oldu
-                console.log('Nightwatcher: All authentication methods failed');
-                
-                // MyFritz için özel mesaj
+
+
+                this._debugLog('All authentication methods failed');
+
+
                 if (isMyFritz) {
-                    console.log('Nightwatcher: MyFritz installation detected but API endpoints not found');
+                    this._debugLog('MyFritz installation detected but API endpoints not found');
                     this._updateErrorState('🔍 API');
                     return;
                 }
-                
-                // Geçici çözüm: Son veri varsa onu göster
+
+
                 if (this._lastReading) {
-                    console.log('Nightwatcher: Showing cached data');
+                    this._debugLog('Showing cached data');
                     this._updateMainDisplay(this._lastReading);
                     this._updateMenuDisplay(this._lastReading);
                     return;
@@ -506,9 +532,9 @@ const NightWatcherIndicator = GObject.registerClass(
                 throw lastError || new Error('All authentication methods failed');
     
             } catch (error) {
-                console.log('Nightwatcher Error:', error);
+                log('[NightWatcher] Error:', error);
                 if (!this._isDestroyed) {
-                    // Daha spesifik hata mesajları göster
+                   
                     let errorMessage = ERROR_TEXT;
                     if (error.message.includes('HTTP 401') || error.message.includes('Unauthorized')) {
                         errorMessage = '🔐 Auth';
@@ -525,25 +551,25 @@ const NightWatcherIndicator = GObject.registerClass(
 
         _playAlert() {
             if (this._isDestroyed) return;
-            
-            console.log('Starting alert playback...');
+
+            this._debugLog('Starting alert playback...');
             try {
                 const soundPath = GLib.build_filenamev([this._extension.path, 'sounds', 'alert.mp3']);
                 if (!GLib.file_test(soundPath, GLib.FileTest.EXISTS)) {
-                    console.log('Alert sound file not found:', soundPath);
+                    log('[NightWatcher] Alert sound file not found:', soundPath);
                     return;
                 }
-    
-               
+
+
                 try {
                     GLib.spawn_command_line_async(`paplay "${soundPath}"`);
-                    console.log('Started paplay playback');
+                    this._debugLog('Started paplay playback');
                     this._lastAlertTime = Date.now();
                 } catch (error) {
-                    console.log('Error playing alert:', error);
+                    log('[NightWatcher] Error playing alert:', error);
                 }
             } catch (error) {
-                console.log('Alert playback failed:', error);
+                log('[NightWatcher] Alert playback failed:', error);
             }
         }
         
@@ -598,7 +624,7 @@ const NightWatcherIndicator = GObject.registerClass(
                 }
         
             } catch (error) {
-                console.log('Error updating menu display:', error);
+                log('[NightWatcher] Error updating menu display:', error);
             }
         }
         _checkAndAlert(sgv) {
@@ -688,17 +714,17 @@ const NightWatcherIndicator = GObject.registerClass(
                 try {
                     this._settings.disconnect(this._settingsChangedId);
                 } catch (error) {
-                    console.log('Error disconnecting settings:', error);
+                    log('[NightWatcher] Error disconnecting settings:', error);
                 }
                 this._settingsChangedId = null;
             }
-    
+
             if (this.boxLayout) {
                 this.boxLayout.get_children().forEach(child => {
                     try {
                         this.boxLayout.remove_child(child);
                     } catch (error) {
-                        console.log('Error removing child:', error);
+                        log('[NightWatcher] Error removing child:', error);
                     }
                 });
             }

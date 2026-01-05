@@ -62,6 +62,19 @@
       <description>Blood glucose urgent low threshold (mg/dL)</description>
     </key>
 
+    <!-- Debug Settings -->
+    <key name="enable-debug-log" type="b">
+      <default>false</default>
+      <summary>Enable Debug Logging</summary>
+      <description>Enable debug logging for troubleshooting (logs to system journal)</description>
+    </key>
+
+    <key name="ignore-tls-errors" type="b">
+      <default>false</default>
+      <summary>Ignore TLS Certificate Errors</summary>
+      <description>Accept self-signed or invalid TLS certificates (use only with trusted servers)</description>
+    </key>
+
     <!-- Alert Settings -->
     <key name="enable-alerts" type="b">
       <default>true</default>

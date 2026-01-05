@@ -33,6 +33,12 @@ export default class NightWatcherPreferences extends ExtensionPreferences {
                 title: 'Display',
                 iconName: 'preferences-desktop-display-symbolic',
                 creator: this._createDisplayPage.bind(this)
+            },
+            {
+                id: 'advanced',
+                title: 'Advanced',
+                iconName: 'preferences-other-symbolic',
+                creator: this._createAdvancedPage.bind(this)
             }
         ];
 
@@ -280,6 +286,45 @@ export default class NightWatcherPreferences extends ExtensionPreferences {
 
         row.add_suffix(spinButton);
         return row;
+    }
+
+    _createAdvancedPage(settings) {
+        const page = new Adw.PreferencesPage();
+        const group = new Adw.PreferencesGroup({
+            title: 'Advanced Settings',
+            description: 'Debugging and advanced configuration options'
+        });
+
+        const debugRow = new Adw.ActionRow({
+            title: 'Enable Debug Logging',
+            subtitle: 'Enable detailed logging for troubleshooting (view logs with: journalctl -f -o cat /usr/bin/gnome-shell)'
+        });
+        const debugSwitch = new Gtk.Switch({
+            active: settings.get_boolean('enable-debug-log'),
+            valign: Gtk.Align.CENTER
+        });
+        debugSwitch.connect('notify::active', (widget) => {
+            settings.set_boolean('enable-debug-log', widget.get_active());
+        });
+        debugRow.add_suffix(debugSwitch);
+        group.add(debugRow);
+
+        const tlsRow = new Adw.ActionRow({
+            title: 'Ignore TLS Certificate Errors',
+            subtitle: 'Accept self-signed or invalid certificates (enable only for trusted self-hosted servers)'
+        });
+        const tlsSwitch = new Gtk.Switch({
+            active: settings.get_boolean('ignore-tls-errors'),
+            valign: Gtk.Align.CENTER
+        });
+        tlsSwitch.connect('notify::active', (widget) => {
+            settings.set_boolean('ignore-tls-errors', widget.get_active());
+        });
+        tlsRow.add_suffix(tlsSwitch);
+        group.add(tlsRow);
+
+        page.add(group);
+        return page;
     }
 
     _createColorRow(settings, key, title) {
