@@ -65,7 +65,7 @@ const NightWatcherIndicator = GObject.registerClass(
 
         _debugLog(...args) {
             if (this._settings.get_boolean('enable-debug-log')) {
-                log('[NightWatcher]', ...args);
+                console.debug('[NightWatcher]', ...args);
             }
         }
 
@@ -73,7 +73,7 @@ const NightWatcherIndicator = GObject.registerClass(
             try {
                
                 this._updateGlucose().catch(error => {
-                    log('[NightWatcher] Error in initial update:', error);
+                    console.log('[NightWatcher] Error in initial update:', error);
                 });
 
 
@@ -85,13 +85,13 @@ const NightWatcherIndicator = GObject.registerClass(
                             return GLib.SOURCE_REMOVE;
                         }
                         this._updateGlucose().catch(error => {
-                            log('[NightWatcher] Error in periodic update:', error);
+                            console.log('[NightWatcher] Error in periodic update:', error);
                         });
                         return GLib.SOURCE_CONTINUE;
                     }
                 );
             } catch (error) {
-                log('[NightWatcher] Error starting monitoring:', error);
+                console.log('[NightWatcher] Error starting monitoring:', error);
             }
         }
     
@@ -147,7 +147,7 @@ const NightWatcherIndicator = GObject.registerClass(
                 secondaryInfo.set_text(secondaryText);
         
             } catch (error) {
-                log('[NightWatcher] Error updating main display:', error);
+                console.log('[NightWatcher] Error updating main display:', error);
                 if (glucoseLabel) {
                     glucoseLabel.set_text(ERROR_TEXT);
                     glucoseLabel.set_style('color: red;');
@@ -532,7 +532,7 @@ const NightWatcherIndicator = GObject.registerClass(
                 throw lastError || new Error('All authentication methods failed');
     
             } catch (error) {
-                log('[NightWatcher] Error:', error);
+                console.log('[NightWatcher] Error:', error);
                 if (!this._isDestroyed) {
                    
                     let errorMessage = ERROR_TEXT;
@@ -556,20 +556,21 @@ const NightWatcherIndicator = GObject.registerClass(
             try {
                 const soundPath = GLib.build_filenamev([this._extension.path, 'sounds', 'alert.mp3']);
                 if (!GLib.file_test(soundPath, GLib.FileTest.EXISTS)) {
-                    log('[NightWatcher] Alert sound file not found:', soundPath);
+                    console.log('[NightWatcher] Alert sound file not found:', soundPath);
                     return;
                 }
 
-
                 try {
-                    GLib.spawn_command_line_async(`paplay "${soundPath}"`);
-                    this._debugLog('Started paplay playback');
+                    const player = global.display.get_sound_player();
+                    const file = Gio.File.new_for_path(soundPath);
+                    player.play_from_file(file, 'NightWatcher Alert', null);
+                    this._debugLog('Alert playback started');
                     this._lastAlertTime = Date.now();
                 } catch (error) {
-                    log('[NightWatcher] Error playing alert:', error);
+                    console.log('[NightWatcher] Error playing alert:', error);
                 }
             } catch (error) {
-                log('[NightWatcher] Alert playback failed:', error);
+                console.log('[NightWatcher] Alert playback failed:', error);
             }
         }
         
@@ -624,7 +625,7 @@ const NightWatcherIndicator = GObject.registerClass(
                 }
         
             } catch (error) {
-                log('[NightWatcher] Error updating menu display:', error);
+                console.log('[NightWatcher] Error updating menu display:', error);
             }
         }
         _checkAndAlert(sgv) {
@@ -714,7 +715,7 @@ const NightWatcherIndicator = GObject.registerClass(
                 try {
                     this._settings.disconnect(this._settingsChangedId);
                 } catch (error) {
-                    log('[NightWatcher] Error disconnecting settings:', error);
+                    console.log('[NightWatcher] Error disconnecting settings:', error);
                 }
                 this._settingsChangedId = null;
             }
@@ -724,7 +725,7 @@ const NightWatcherIndicator = GObject.registerClass(
                     try {
                         this.boxLayout.remove_child(child);
                     } catch (error) {
-                        log('[NightWatcher] Error removing child:', error);
+                        console.log('[NightWatcher] Error removing child:', error);
                     }
                 });
             }
